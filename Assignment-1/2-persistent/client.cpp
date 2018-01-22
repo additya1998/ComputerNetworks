@@ -39,7 +39,7 @@ int main(int argc, char *argv[]){
 	}
 
 	int countOfFiles = 0, sizeOfFile = 0, error = 0, sizeRead = 0;
-	char buffer[1024], fileName[4096 + 10];
+	char buffer[1024 + 10], fileName[4096 + 10];
 	
 	cout << "Enter number of files to download: ";
 	cin >> countOfFiles;
