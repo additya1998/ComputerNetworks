@@ -41,8 +41,13 @@ int main(int argc, char *argv[]){
 	int countOfFiles = 0, sizeOfFile = 0, error = 0, sizeRead = 0;
 	char buffer[1024], fileName[4096 + 10];
 	
-	cout << "Enter number of files to download: ";
-	cin >> countOfFiles;
+	// cout << "Enter number of files to download: ";
+	// cin >> countOfFiles;
+	countOfFiles = argc - 1;
+	if(countOfFiles < 0){
+		cout << "Invalid input";
+		return -1;
+	}
 
 	string temp = to_string(countOfFiles) + "\n";
 
@@ -50,8 +55,9 @@ int main(int argc, char *argv[]){
 
 	for(int c=0; c<countOfFiles; ++c){
 
-		cout << "Enter file name: ";
-		cin >> fileName;
+		// cout << "Enter file name: ";
+		// cin >> fileName;
+		strcpy(fileName, argv[c + 1]);
 
 		int l = strlen(fileName);
 		fileName[l] = '\n';

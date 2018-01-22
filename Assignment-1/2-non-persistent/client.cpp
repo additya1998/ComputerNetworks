@@ -14,18 +14,16 @@ using namespace std;
 
 int main(int argc, char *argv[]){
 
-
-	int countOfFiles = 0;
-	cout << "Enter number of files to download: ";
-	cin >> countOfFiles;
+	int countOfFiles = argc - 1;
+	if(countOfFiles < 0){
+		cout << "Invalid input";
+		return -1;
+	}
 
 	for(int c=0; c<countOfFiles; ++c){
-
 		int error = 0;
-
 		char fileName[4096 + 10];
-		cout << "Enter file name: ";
-		cin >> fileName;
+		strcpy(fileName, argv[c + 1]);
 
 		struct sockaddr_in address;
 		int sock = 0;
