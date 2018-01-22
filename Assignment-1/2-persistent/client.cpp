@@ -14,17 +14,9 @@ using namespace std;
 
 int main(int argc, char *argv[]){
 
-	if(argc != 2){
-		printf("Usage error \n");
-		return -1;
-	}
-
-	char *fileName = argv[1];
-
 	struct sockaddr_in address;
 	int sock = 0;
 	struct sockaddr_in serv_addr;
-	char buffer[1024] = {0};
 
 	if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		printf("\n Socket creation error \n");
@@ -46,69 +38,68 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 
-	send(sock, fileName, strlen(fileName), 0);
-	printf("Name of required file sent\n");
-
-	int l = read(sock, buffer, 1024);
-
-	if(l == -1){
-		printf("Error in getting size of file from server.\n");
-		return -1;
-	}
-
-	buffer[l] = '\0';
-
-	if(buffer[0] == '-'){
-		printf("Error occured %s", &buffer[3]);
-		return -1;
-	}
-
-	int sizeOfFile = 0, done = 0, s = 0;
-
-	for(int i=0; buffer[i] != '\0'; ++i){
-		if(!done and buffer[i] == '\n') done = i;
-		else if(done){
-			buffer[i - done - 1] = buffer[i];
-			s = i - done;
-		}
-		else sizeOfFile = (sizeOfFile * 10) + buffer[i] - '0';
-	}
-
-	buffer[s] = '\0';
-
-	int fileWrite = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-
-	int w = write(fileWrite, buffer, s);
-	int sizeRead = 0;
-
-	if(w == -1){
-		printf("Error in writing to file.\n");
-		return -1;
-	}
-	else sizeRead += w;
+	int countOfFiles = 0, sizeOfFile = 0, error = 0, sizeRead = 0;
+	char buffer[1024], fileName[4096 + 10];
 	
-	if(fileWrite == -1){
-		printf("Cannot open file on client.\n");
-		return -1;
-	}
+	cout << "Enter number of files to download: ";
+	cin >> countOfFiles;
 
-	while(sizeRead < sizeOfFile){
-		int nowRead = read(sock, buffer, 1024);
-		if(nowRead == -1){
-			printf("Error in getting file content from server.\n");
-			return -1;		
+	for(int c=0; c<countOfFiles; ++c){
+
+		cout << "Enter file name: ";
+		cin >> fileName;
+
+		send(sock, fileName, strlen(fileName), 0);
+		printf("Name of required file sent\n");
+
+		sizeOfFile = 0, error = 0, sizeRead = 0;
+		while(true){
+			int t = read(sock, buffer, 1);
+			if(t == -1){
+				error = 1; break;
+			}
+			if(buffer[0] == '-'){
+				error = 2; break;
+			}
+			else if(buffer[0] == '\n') break;
+			else sizeOfFile = (sizeOfFile * 10) + buffer[0] - '0'; 
 		}
 
-		int t = write(fileWrite, buffer, nowRead);
-		if(t == -1 or t != nowRead){
-			printf("Error in writing to file.\n");
-			return -1;
+		if(error == 1){
+			cout << "Error in read.\n";
+			continue;
 		}
 
-		sizeRead += nowRead;
+		if(error == 2){
+			cout << "File not found.\n";
+			continue;
+		}
+
+		int fileWrite = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+		if(fileWrite == -1){
+			cout << "Cannot create file.";
+			continue;
+		}
+
+		while(sizeRead < sizeOfFile){
+			int nowRead = read(sock, buffer, min(1024, sizeOfFile - sizeRead));
+			if(nowRead == -1){
+				printf("Error in getting file content from server.\n");
+				error = 1;
+				break;
+			}
+			int nowWritten = write(fileWrite, buffer, nowRead);
+			if(nowWritten != nowRead){
+				printf("Error in writing to file.\n");
+				error = 1;
+				break;				
+			}
+			sizeRead += nowRead;
+		}
+
+		close(fileWrite);
 	}
 
-	close(fileWrite);
 	close(sock);
 
 	return 0;
