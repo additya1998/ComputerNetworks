@@ -13,7 +13,7 @@
 #include <string>
 
 #define PORT 8080
-char file_name[PATH_MAX + 10], buffer[1024];
+char file_name[PATH_MAX + 10], buffer[1024 + 10];
 
 using namespace std;
 
@@ -57,6 +57,7 @@ int main(int argc, char const *argv[]) {
 	}
 
 	valread = read( new_socket , file_name, PATH_MAX);
+	file_name[valread] = '\0';
 
 	int fd = open(file_name, O_RDONLY);
 	if(fd < 0) {
@@ -80,7 +81,7 @@ int main(int argc, char const *argv[]) {
 	send(new_socket , str.c_str() , strlen(str.c_str()) , 0);
 
 	while (1) {
-		int bytes_left = read(fd, buffer, sizeof(buffer));
+		int bytes_left = read(fd, buffer, 1024);
 		if(bytes_left == 0) {
 			break;
 		}
