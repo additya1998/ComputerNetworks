@@ -53,7 +53,6 @@ int main(int argc, char *argv[]){
 		cout << "Enter file name: ";
 		cin >> fileName;
 
-
 		int l = strlen(fileName);
 		fileName[l] = '\n';
 		fileName[l + 1] = '\0';
