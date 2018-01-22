@@ -44,14 +44,24 @@ int main(int argc, char *argv[]){
 	cout << "Enter number of files to download: ";
 	cin >> countOfFiles;
 
-	send(sock, countOfFiles.c_str(), strlen(countOfFiles.c_str()), 0);
+	string temp = to_string(countOfFiles) + "\n";
+
+	send(sock, temp.c_str(), strlen(temp.c_str()), 0);
 
 	for(int c=0; c<countOfFiles; ++c){
 
 		cout << "Enter file name: ";
 		cin >> fileName;
 
+
+		int l = strlen(fileName);
+		fileName[l] = '\n';
+		fileName[l + 1] = '\0';
+
 		send(sock, fileName, strlen(fileName), 0);
+
+		fileName[l] = '\0';		
+
 		printf("Name of required file sent\n");
 
 		sizeOfFile = 0, error = 0, sizeRead = 0;
