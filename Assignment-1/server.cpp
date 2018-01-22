@@ -62,10 +62,8 @@ int main(int argc, char const *argv[]) {
 	if(fd < 0) {
 		perror("open failed");
 		string str = to_string(-1) + '\n';
+		str += string(strerror(errno));
 		send(new_socket , str.c_str() , strlen(str.c_str()) , 0);
-		str = string(strerror(errno));
-		send(new_socket , str.c_str() , strlen(str.c_str()) , 0);
-		fprintf(stderr, "%s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -73,10 +71,8 @@ int main(int argc, char const *argv[]) {
 	if(stat(file_name, &st) < 0) {
 		perror("stat failed");
 		string str = to_string(-1) + '\n';
+		str += string(strerror(errno));
 		send(new_socket , str.c_str() , strlen(str.c_str()) , 0);
-		str = string(strerror(errno));
-		send(new_socket , str.c_str() , strlen(str.c_str()) , 0);
-		fprintf(stderr, "%s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -105,5 +101,7 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 	close(fd);
+	close(new_socket);
+	close(server_fd);
 	return 0;
 }

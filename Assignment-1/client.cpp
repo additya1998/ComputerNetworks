@@ -59,7 +59,7 @@ int main(int argc, char *argv[]){
 	buffer[l] = '\0';
 
 	if(buffer[0] == '-'){
-		printf("%s", &buffer[3]);
+		printf("Error occured %s", &buffer[3]);
 		return -1;
 	}
 
