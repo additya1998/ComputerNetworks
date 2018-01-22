@@ -44,6 +44,8 @@ int main(int argc, char *argv[]){
 	cout << "Enter number of files to download: ";
 	cin >> countOfFiles;
 
+	send(sock, countOfFiles.c_str(), strlen(countOfFiles.c_str()), 0);
+
 	for(int c=0; c<countOfFiles; ++c){
 
 		cout << "Enter file name: ";
@@ -59,6 +61,7 @@ int main(int argc, char *argv[]){
 				error = 1; break;
 			}
 			if(buffer[0] == '-'){
+				read(sock, buffer, 2);
 				error = 2; break;
 			}
 			else if(buffer[0] == '\n') break;
@@ -96,11 +99,8 @@ int main(int argc, char *argv[]){
 			}
 			sizeRead += nowRead;
 		}
-
 		close(fileWrite);
 	}
-
 	close(sock);
-
 	return 0;
 }

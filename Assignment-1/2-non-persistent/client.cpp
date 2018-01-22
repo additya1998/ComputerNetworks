@@ -16,11 +16,7 @@ int main(int argc, char *argv[]){
 
 	char fileName[4096 + 10];
 
-	int countOfFiles = 0;
-	cout << "Enter number of files to download: ";
-	cin >> countOfFiles;
-
-	for(int c=0; c<countOfFiles; ++c){
+	while(true){
 
 		cin >> fileName;
 
