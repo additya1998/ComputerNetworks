@@ -57,7 +57,6 @@ int main(int argc, char const *argv[]) {
 	}
 
 	valread = read( new_socket , file_name, PATH_MAX);
-	printf("%s\n", file_name);
 
 	int fd = open(file_name, O_RDONLY);
 	if(fd < 0) {
