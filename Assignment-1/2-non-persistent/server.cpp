@@ -57,8 +57,24 @@ int main(int argc, char const *argv[]) {
 			continue;
 		}
 
-		valread = read( new_socket , file_name, PATH_MAX);
-		file_name[valread] = '\0';
+		int len = 0;
+		bool noReadError = true;
+		file_name[len] = '\0';
+		while(true){
+			int t = read(new_socket, buffer, 1);
+			if(t == -1){
+				perror("read failed");
+				noReadError = false;
+				break;
+			}
+			else if(buffer[0] == '\n') break;
+			else {
+				file_name[len++] = buffer[0];
+				file_name[len] = '\0';
+			}
+		}
+
+		if(!noReadError) continue;
 
 		int fd = open(file_name, O_RDONLY);
 		if(fd < 0) {
