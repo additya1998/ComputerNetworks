@@ -56,8 +56,6 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 
-	buffer[l] = '\0';
-
 	if(buffer[0] == '-'){
 		printf("Error occured %s", &buffer[3]);
 		return -1;
@@ -65,7 +63,7 @@ int main(int argc, char *argv[]){
 
 	int sizeOfFile = 0, done = 0, s = 0;
 
-	for(int i=0; buffer[i] != '\0'; ++i){
+	for(int i=0; i < l; ++i){
 		if(!done and buffer[i] == '\n') done = i;
 		else if(done){
 			buffer[i - done - 1] = buffer[i];
