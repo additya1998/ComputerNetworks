@@ -21,8 +21,10 @@ int main(int argc, char *argv[]){
 	}
 
 	for(int c=0; c<countOfFiles; ++c){
-		int error = 0;
+
+		int	sizeOfFile = 0, error = 0, sizeRead = 0;
 		char fileName[4096 + 10];
+
 		strcpy(fileName, argv[c + 1]);
 
 		struct sockaddr_in address;
@@ -55,11 +57,15 @@ int main(int argc, char *argv[]){
 			continue;
 		}
 
-		cout << fileName;
+		int l = strlen(fileName);
+		fileName[l] = '\n';
+		fileName[l + 1] = '\0';
+
 		send(sock, fileName, strlen(fileName), 0);
 		printf("Name of required file sent\n");
 
-		int sizeOfFile = 0, sizeRead = 0;
+		fileName[l] = '\0';
+
 		while(true){
 			int t = read(sock, buffer, 1);
 			if(t == -1){
@@ -88,6 +94,7 @@ int main(int argc, char *argv[]){
 		int fileWrite = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		if(fileWrite == -1){
 			cout << "Cannot create file.";
+			close(sock);
 			continue;
 		}
 
@@ -109,6 +116,5 @@ int main(int argc, char *argv[]){
 		close(fileWrite);
 		close(sock);
 	}
-
 	return 0;
 }
