@@ -2,38 +2,86 @@ import os
 import re
 import socket
 import sys
-import threading
 import time
 import threading
-import requests
 
 port = 21000
-host = ""
-threads = []
+host = ''
 cache_index = 0
-cached_files = []
+cached_files = {}
+
+def requestWebsite(url_path, req_data, url_hex):
+	port_no = ''
+	host = ''
+	file = ''
+
+	colon_count = 0
+	slash_count = 0
+	for c in url_path:
+		if c == ':':
+			colon_count += 1
+		elif c == '/' and slash_count < 3:
+			slash_count += 1
+		elif colon_count == 1 and slash_count == 2:
+			host += c
+		elif colon_count == 2 and slash_count == 2:
+			port_no += c
+		elif slash_count == 3:
+			file += c
+
+	if port_no == '':
+		port_no = '80'
+	port_no = int(port_no)
+
+	req_data = req_data.split(' ')
+	req_data[1] = '/' + file
+	req_data = ' '.join(req_data)
+
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.settimeout(5000)
+	s.connect((host, port_no))
+	s.sendall(req_data)
+
+	fd = open(url_hex, "w")
+
+	while True:
+		data = s.recv(262144)
+		if data != '':
+			fd.write(data)
+		else:
+			break
+
+	fd.close()
 
 def serve_request(conn, addr):
-	req_data = conn.recv(1024)
-	req_method = req_data.split('\r\n')[0].split(' ')[0]
-	if req_method != "POST":
-		file_path = req_data.split('\n\r')[0].split(' ')[1]
-		host = file_path.split(':')[0] + ':' + file_path.split(':')[1]
-		port = file_path.split(':')[2].split('/')[0]
-		file = file_path.find(host + ':' + port)
-		file = file_path[file + len(host + ':' + port):].lstrip('/')
+	req_data = conn.recv(262144)
+	req_lines = req_data.splitlines()
 
-		fd = open("t_file", "w")
-		file_req = requests.get(file_path)
-		file_content = file_req.content 
-		fd.write(file_content)
-		print file_req.headers['Cache-control']
-
-		conn.send(file_content)
-
-
+	if len(req_lines) == 0:
+		print "Empty Request"
 	else:
-		print "Invalid Request"
+		req_method = req_lines[0].split(' ')[0]
+
+		if req_method == "GET" and len(req_lines[0].split(' ')) == 3:
+			url_path = req_lines[0].split(' ')[1]
+			url_hex = url_path.encode("hex")
+
+			requestWebsite(url_path, req_data, url_hex)
+
+			fd = open(url_hex, "r")
+
+			while True:
+				data = fd.read(262144)
+				if data != '':
+					conn.send(data)
+				else:
+					break
+
+			fd.close()
+
+
+		else:
+			print "Invalid Request"
 
 	conn.close()		
 
@@ -47,8 +95,4 @@ if __name__ == "__main__":
 	while (1):
 		conn, addr = sock.accept()
 		thread = threading.Thread(target=serve_request, args=(conn, addr))
-		threads.append(thread)
 		thread.start()
-
-	for thread in threads:
-		thread.join()
