@@ -3,6 +3,7 @@ import socket
 import hashlib
 import time
 import threading
+import sys
 from collections import OrderedDict
 
 port = 21000
@@ -50,10 +51,13 @@ def requestWebsite(url_path, req_data, url_hex):
 
 	print('\n\nEnd of Request\n\n')
 
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.settimeout(50)
-	s.connect((host, port_no))
-	s.sendall(req_data)
+	try:
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		s.settimeout(50)
+		s.connect((host, port_no))
+		s.sendall(req_data)
+	except:
+		sys.exit(0)
 
 	data = s.recv(262144)
 	lines = data.splitlines()
@@ -65,19 +69,32 @@ def requestWebsite(url_path, req_data, url_hex):
 	if sent_if_modified and lines[0].split(' ')[1] == '304':
 		return
 
-	fd = open('temp' + str(threading.current_thread().ident), "w")
-	fd.write(data)
+	try:
+		fd = open('temp' + str(threading.current_thread().ident), "w")
+		fd.write(data)
+	except:
+		print "Error writing to file"
+		sys.exit(0)
 
 	while True:
-		data = s.recv(262144)
-		if data != '':
-			fd.write(data)
-		else:
-			break
+		try:
+			data = s.recv(262144)
+			if data != '':
+				fd.write(data)
+			else:
+				break
+		except:
+			print "Error"
+			sys.exit(0)
 
 	fd.close()
 
-	fd = open('temp' + str(threading.current_thread().ident), "r")
+	try:
+		fd = open('temp' + str(threading.current_thread().ident), "r")
+	except:
+		print "Error processing file"
+		sys.exit(0)
+
 	for line in fd:
 		if line == '':
 			break
@@ -92,11 +109,21 @@ def requestWebsite(url_path, req_data, url_hex):
 	os.rename('temp' + str(threading.current_thread().ident), url_hex)
 
 def serve_request(conn, addr):
-	req_data = conn.recv(262144)
+	try:
+		req_data = conn.recv(262144)
+	except:
+		print "Problem receiving request data"
+		sys.exit(0)
+
 	req_lines = req_data.splitlines()
 
 	if len(req_lines) == 0:
-		print "Empty Request"
+		try:
+			conn.send('HTTP/1.1 400 Bad Request\r\n\r\n')
+		except:
+			print "Error"
+			sys.exit(0)
+
 	else:
 		req_method = req_lines[0].split(' ')[0]
 
@@ -106,31 +133,49 @@ def serve_request(conn, addr):
 
 			requestWebsite(url_path, req_data, url_hex)
 
-			fd = open(url_hex, "r")
+			try:
+				fd = open(url_hex, "r")
+			except IOError:
+				conn.send('HTTP/1.1 500 Internal Server Error\r\n\r\n')
+				sys.exit(0)
 
 			while True:
-				data = fd.read(262144)
-				if data != '':
-					conn.send(data)
-				else:
-					break
+				try:
+					data = fd.read(262144)
+					if data != '':
+						conn.send(data)
+					else:
+						break
+				except:
+					print "Error processing request"
+					sys.exit(0)
 
 			fd.close()
 
-
 		else:
-			print "Invalid Request"
+			try:
+				conn.send('HTTP/1.1 400 Bad Request\r\n\r\n')
+			except:
+				print "Error"
+				sys.exit(0)
 
 	conn.close()		
 
 if __name__ == "__main__":
 
-	sock = socket.socket()
-	sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	sock.bind((host, port))
-	sock.listen(5)
+	try:
+		sock = socket.socket()
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		sock.bind((host, port))
+		sock.listen(5)
+	except:
+		print "Cannot initialise socket"
+		sys.exit(0)
 
 	while (1):
-		conn, addr = sock.accept()
-		thread = threading.Thread(target=serve_request, args=(conn, addr))
-		thread.start()
+		try:
+			conn, addr = sock.accept()
+			thread = threading.Thread(target=serve_request, args=(conn, addr))
+			thread.start()
+		except:
+			print "Could not accept request"
