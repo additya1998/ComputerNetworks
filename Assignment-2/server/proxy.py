@@ -69,6 +69,18 @@ def requestWebsite(url_path, req_data, url_hex):
 	print('\n\nEnd of Response\n\n')
 
 	if sent_if_modified and lines[0].split(' ')[1] == '304':
+		while True:
+			try:
+				data = s.recv(262144)
+				if data == '':
+					break
+			except (KeyboardInterrupt, SystemExit):
+				raise
+			except Exception as msg:
+				print "Error receiving data from server"
+				print msg
+				sys.exit(0)
+		s.close()
 		return
 
 	try:
@@ -95,6 +107,7 @@ def requestWebsite(url_path, req_data, url_hex):
 			sys.exit(0)
 
 	fd.close()
+	s.close()
 
 	try:
 		fd = open('temp' + str(threading.current_thread().ident), "r")
