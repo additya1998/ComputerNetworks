@@ -1,18 +1,20 @@
 import os
 import socket
-import sys
+import hashlib
 import time
 import threading
+from collections import OrderedDict
 
 port = 21000
 host = ''
-cache_index = 0
-cached_files = {}
+cached_files = OrderedDict()
 
 def requestWebsite(url_path, req_data, url_hex):
 	port_no = ''
 	host = ''
 	file = ''
+
+	print [url_path, url_hex]
 
 	colon_count = 0
 	slash_count = 0
@@ -44,8 +46,9 @@ def requestWebsite(url_path, req_data, url_hex):
 		req_data = ' '.join(req_data)
 		sent_if_modified = True
 
-
 	print(req_data)
+
+	print('\n\nEnd of Request\n\n')
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.settimeout(50)
@@ -57,28 +60,36 @@ def requestWebsite(url_path, req_data, url_hex):
 
 	print(data)
 
+	print('\n\nEnd of Response\n\n')
+
 	if sent_if_modified and lines[0].split(' ')[1] == '304':
 		return
 
-	for line in lines:
-		if line == '':
-			break
-		if line.lower().find("cache-control:") == 0 and line.lower().find('no-cache') == -1:
-			cached_files[url_path] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-
-	fd = open(url_hex, "w")
+	fd = open('temp' + str(threading.current_thread().ident), "w")
 	fd.write(data)
-
 
 	while True:
 		data = s.recv(262144)
-
 		if data != '':
 			fd.write(data)
 		else:
 			break
 
 	fd.close()
+
+	fd = open('temp' + str(threading.current_thread().ident), "r")
+	for line in fd:
+		if line == '':
+			break
+		if line.lower().find("cache-control:") == 0 and line.lower().find('no-cache') == -1:
+			if url_path in cached_files:
+				del cached_files[url_path]
+			cached_files[url_path] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+			if len(cached_files) > 3:
+				cached_files.popitem(last=False)
+
+	fd.close()
+	os.rename('temp' + str(threading.current_thread().ident), url_hex)
 
 def serve_request(conn, addr):
 	req_data = conn.recv(262144)
@@ -91,7 +102,7 @@ def serve_request(conn, addr):
 
 		if req_method == "GET" and len(req_lines[0].split(' ')) == 3:
 			url_path = req_lines[0].split(' ')[1]
-			url_hex = url_path.encode("hex")
+			url_hex = 'file' + hashlib.md5(url_path).hexdigest()
 
 			requestWebsite(url_path, req_data, url_hex)
 
