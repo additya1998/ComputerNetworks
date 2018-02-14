@@ -56,6 +56,8 @@ def requestWebsite(url_path, req_data, url_hex):
 		s.settimeout(50)
 		s.connect((host, port_no))
 		s.sendall(req_data)
+	except (KeyboardInterrupt, SystemExit):
+		raise
 	except:
 		sys.exit(0)
 
@@ -72,6 +74,8 @@ def requestWebsite(url_path, req_data, url_hex):
 	try:
 		fd = open('temp' + str(threading.current_thread().ident), "w")
 		fd.write(data)
+	except (KeyboardInterrupt, SystemExit):
+		raise
 	except:
 		print "Error writing to file"
 		sys.exit(0)
@@ -83,14 +87,19 @@ def requestWebsite(url_path, req_data, url_hex):
 				fd.write(data)
 			else:
 				break
-		except:
-			print "Error"
+		except (KeyboardInterrupt, SystemExit):
+			raise
+		except Exception as msg:
+			print "Error receiving data from server"
+			print msg
 			sys.exit(0)
 
 	fd.close()
 
 	try:
 		fd = open('temp' + str(threading.current_thread().ident), "r")
+	except (KeyboardInterrupt, SystemExit):
+		raise
 	except:
 		print "Error processing file"
 		sys.exit(0)
@@ -111,6 +120,8 @@ def requestWebsite(url_path, req_data, url_hex):
 def serve_request(conn, addr):
 	try:
 		req_data = conn.recv(262144)
+	except (KeyboardInterrupt, SystemExit):
+		raise
 	except:
 		print "Problem receiving request data"
 		sys.exit(0)
@@ -120,8 +131,10 @@ def serve_request(conn, addr):
 	if len(req_lines) == 0:
 		try:
 			conn.send('HTTP/1.1 400 Bad Request\r\n\r\n')
+		except (KeyboardInterrupt, SystemExit):
+			raise
 		except:
-			print "Error"
+			print "Error sending to client"
 			sys.exit(0)
 
 	else:
@@ -146,6 +159,8 @@ def serve_request(conn, addr):
 						conn.send(data)
 					else:
 						break
+				except (KeyboardInterrupt, SystemExit):
+					raise
 				except:
 					print "Error processing request"
 					sys.exit(0)
@@ -155,8 +170,10 @@ def serve_request(conn, addr):
 		else:
 			try:
 				conn.send('HTTP/1.1 400 Bad Request\r\n\r\n')
+			except (KeyboardInterrupt, SystemExit):
+				raise
 			except:
-				print "Error"
+				print "Error in sending to client"
 				sys.exit(0)
 
 	conn.close()		
@@ -168,6 +185,8 @@ if __name__ == "__main__":
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.bind((host, port))
 		sock.listen(5)
+	except (KeyboardInterrupt, SystemExit):
+		raise
 	except:
 		print "Cannot initialise socket"
 		sys.exit(0)
@@ -177,5 +196,7 @@ if __name__ == "__main__":
 			conn, addr = sock.accept()
 			thread = threading.Thread(target=serve_request, args=(conn, addr))
 			thread.start()
+		except (KeyboardInterrupt, SystemExit):
+			raise
 		except:
 			print "Could not accept request"
