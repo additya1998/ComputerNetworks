@@ -112,7 +112,12 @@ def requestWebsite(url_path, req_data, url_hex):
 				del cached_files[url_path]
 			cached_files[url_path] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
 			if len(cached_files) > 3:
-				cached_files.popitem(last=False)
+				result = cached_files.popitem(last=False)
+				print 'Removing cache of' + result[0]
+				try:
+					os.remove(result[0])
+				except OSError:
+					pass # if file doesn't exist
 
 	fd.close()
 	os.rename('temp' + str(threading.current_thread().ident), url_hex)
@@ -166,6 +171,11 @@ def serve_request(conn, addr):
 					sys.exit(0)
 
 			fd.close()
+			if url_path not in cached_files:
+				try:
+					os.remove(url_hex)
+				except OSError:
+					pass # if file doesn't exist
 
 		else:
 			try:
