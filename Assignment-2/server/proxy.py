@@ -1,5 +1,4 @@
 import os
-import re
 import socket
 import sys
 import time
@@ -36,16 +35,44 @@ def requestWebsite(url_path, req_data, url_hex):
 	req_data = req_data.split(' ')
 	req_data[1] = '/' + file
 	req_data = ' '.join(req_data)
+	sent_if_modified = False
+
+	if url_path in cached_files and req_data.lower().find('If-Modified-Since:') == -1:
+		req_data = req_data.split(' ')
+		temp_data = req_data[2].split('\r\n', 1)
+		req_data[2] = temp_data[0] + '\nIf-Modified-Since: ' + cached_files[url_path] + '\n' + temp_data[1]
+		req_data = ' '.join(req_data)
+		sent_if_modified = True
+
+
+	print(req_data)
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.settimeout(5000)
+	s.settimeout(50)
 	s.connect((host, port_no))
 	s.sendall(req_data)
 
+	data = s.recv(262144)
+	lines = data.splitlines()
+
+	print(data)
+
+	if sent_if_modified and lines[0].split(' ')[1] == '304':
+		return
+
+	for line in lines:
+		if line == '':
+			break
+		if line.lower().find("cache-control:") == 0 and line.lower().find('no-cache') == -1:
+			cached_files[url_path] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+
 	fd = open(url_hex, "w")
+	fd.write(data)
+
 
 	while True:
 		data = s.recv(262144)
+
 		if data != '':
 			fd.write(data)
 		else:
